@@ -1,0 +1,40 @@
+
+[{
+"id":1,
+"name":"Pilates",
+"description":"Clase de Pilates para mejorar la fuerza, la postura y la flexibilidad",
+"duration":60,
+"price":18,
+"category":"Pilates",
+"available": true
+},
+{
+"id":2,
+"name":"Pilates postparto",
+"description":"Clase adaptada para la recuperación y el movimiento después del parto",
+"duration":60,
+"price":20,
+"category":"Postparto",
+"available":true
+},
+
+{
+  "id": 3,
+  "name": "Clase individual de Pilates",
+  "description": "Sesión individual adaptada a las necesidades de cada persona",
+  "duration": 45,
+  "price": 30,
+  "category": "Pilates",
+  "available": true
+},
+{
+"id":4,
+"name":"Grupo de postparto",
+"description":"Sesión grupal de movimiento y acompañamiento después del parto",
+"duration":60,
+"price":15,
+"category":"Postparto",
+"available":false
+}
+
+]
