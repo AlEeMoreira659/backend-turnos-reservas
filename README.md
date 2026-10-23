@@ -88,3 +88,47 @@ Cada servicio contiene los siguientes campos:
 - El archivo `.env` no debe subirse al repositorio.
 - El archivo `.env.example` sirve como plantilla de configuración.
 - Los datos se gestionan en memoria a partir de `services.json`; los cambios realizados durante la ejecución no se guardan automáticamente en el archivo JSON.
+## Ejemplos de uso de ServiceManager
+
+Los siguientes ejemplos muestran cómo utilizar los métodos de `ServiceManager`.
+
+```javascript
+import { ServiceManager } from './src/managers/ServiceManager.js'
+
+// Creamos un administrador de servicios.
+const serviceManager = new ServiceManager()
+
+// 1. Obtener todos los servicios.
+const services = serviceManager.getServices()
+console.log(services)
+
+// 2. Buscar un servicio por su ID.
+const service = serviceManager.getServiceById(2)
+console.log(service)
+
+// 3. Añadir un servicio nuevo.
+// El ID se genera automáticamente.
+const newService = serviceManager.addService({
+    name: 'Pilates para principiantes',
+    description: 'Clase de iniciación al Pilates',
+    duration: 45,
+    price: 16,
+    category: 'Pilates',
+    available: true
+})
+console.log(newService)
+
+// 4. Actualizar el precio del servicio creado.
+const updatedService = serviceManager.updateService(
+    newService.id,
+    { price: 19 }
+)
+console.log(updatedService)
+
+// 5. Eliminar el servicio creado.
+const deletedService = serviceManager.deleteService(newService.id)
+console.log(deletedService)
+```
+
+
+**Nota:** estos ejemplos son ilustrativos. Los cambios se realizan en memoria y no se guardan automáticamente en `services.json`.
