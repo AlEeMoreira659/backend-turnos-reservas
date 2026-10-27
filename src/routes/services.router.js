@@ -14,11 +14,24 @@ const serviceManager = new ServiceManager()
 router.get('/', (req, res) => {//Indicamos qué debe ocurrir cuando alguien hace una petición GET a la ruta principal de este router. El símbolo '/' representa la ruta raíz del router, no toda la dirección final.
 //req significa request: la petición que llega.
 //res significa response: la respuesta que enviamos.
-     const services = serviceManager.getServices()
 
- res.json(services)
+let services = serviceManager.getServices()
+
+ const { category, available } = req.query
+
+if(category){
+    services= services.filter (
+        
+         service => service.category.toLowerCase() === category.toLowerCase()
+    )
+}
+if(available !==undefined){
+    services= services.filter(
+         service => service.available === (available === 'true')
+    )
+}
+  res.json(services)
 })
-// GET: consultar un servicio por su ID.
 
 router.get('/:id', (req , res) =>{
     const id = Number (req.params.id)
