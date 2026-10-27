@@ -43,10 +43,25 @@ Para ejecutar el proyecto, utilizar:
 ```bash
 npm run dev
 ```
+## Endpoints de la API
+
+El servidor utiliza el prefijo `/api/services` para gestionar los servicios.
+
+| Método HTTP | Ruta | Función |
+|---|---|---|
+| GET | `/api/services` | Obtener todos los servicios |
+| GET | `/api/services/:id` | Obtener un servicio por su ID |
+| POST | `/api/services` | Crear un servicio |
+| PUT | `/api/services/:id` | Actualizar un servicio |
+| DELETE | `/api/services/:id` | Eliminar un servicio |
+
+Las peticiones POST y PUT deben enviar los datos en formato JSON. Para crear un servicio, es necesario incluir los campos obligatorios: `name`, `description`, `duration`, `price`, `category` y `available`.
+
+Si se consulta, actualiza o elimina un identificador que no existe, la API devuelve un error 404.
 
 ## Estructura del proyecto
 
-```text
+
 backend-turnos-reservas/
 ├── src/
 │   ├── config/
@@ -55,12 +70,16 @@ backend-turnos-reservas/
 │   │   └── services.json
 │   ├── managers/
 │   │   └── ServiceManager.js
-│   └── app.js
+│   ├── routes/
+│   │   └── services.router.js
+│   ├── app.js
+│   └── server.js
 ├── .env.example
 ├── .gitignore
 ├── package.json
+├── package-lock.json
 └── README.md
-```
+
 
 ## Gestión de servicios
 

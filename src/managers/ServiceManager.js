@@ -26,10 +26,10 @@ export class ServiceManager {
 
         Devuelve todas las clases disponibles en la lista.
     */
-    getServices() {
-        return this.services
-    }
-
+  getServices() {
+    
+    return this.services
+}
     /*
         MÉTODO 2: getServiceById(id)
 
