@@ -2,15 +2,16 @@
 
 ## Descripción
 
-Este proyecto es un backend desarrollado con Node.js para gestionar servicios relacionados con clases de Pilates y actividades de postparto.
+Este proyecto es un backend desarrollado con Node.js y Express para gestionar servicios relacionados con clases de Pilates y actividades de postparto.
 
-Permite consultar, buscar, añadir, actualizar y eliminar servicios mediante la clase `ServiceManager`.
+Permite consultar, buscar, añadir, actualizar y eliminar servicios mediante una API REST. La lógica de gestión se encuentra en la clase `ServiceManager`.
 
-Los datos iniciales se almacenan en un archivo JSON.
+Los datos iniciales se cargan desde un archivo JSON y las modificaciones se gestionan en memoria.
 
 ## Tecnologías utilizadas
 
 - Node.js
+- Express
 - JavaScript (ES Modules)
 - dotenv
 - JSON
@@ -36,13 +37,18 @@ PORT=8080
 NODE_ENV=development
 ```
 
+También se puede utilizar `.env.example` como plantilla de configuración.
+
 ## Ejecución
 
-Para ejecutar el proyecto, utilizar:
+Para iniciar el servidor, ejecutar:
 
 ```bash
 npm run dev
 ```
+
+El servidor estará disponible en `http://localhost:8080`.
+
 ## Endpoints de la API
 
 El servidor utiliza el prefijo `/api/services` para gestionar los servicios.
@@ -55,13 +61,52 @@ El servidor utiliza el prefijo `/api/services` para gestionar los servicios.
 | PUT | `/api/services/:id` | Actualizar un servicio |
 | DELETE | `/api/services/:id` | Eliminar un servicio |
 
-Las peticiones POST y PUT deben enviar los datos en formato JSON. Para crear un servicio, es necesario incluir los campos obligatorios: `name`, `description`, `duration`, `price`, `category` y `available`.
+### Filtros de servicios
 
-Si se consulta, actualiza o elimina un identificador que no existe, la API devuelve un error 404.
+La ruta `GET /api/services` permite filtrar los resultados mediante parámetros de consulta:
+
+- `category`: filtra por categoría.
+- `available`: filtra por disponibilidad (`true` o `false`).
+
+Ejemplos:
+
+```http
+GET /api/services?category=Pilates
+GET /api/services?available=true
+GET /api/services?category=Postparto&available=true
+```
+
+### Crear un servicio
+
+Las peticiones `POST` deben enviar los datos en formato JSON. Los campos obligatorios son `name`, `description`, `duration`, `price`, `category` y `available`.
+
+Ejemplo de cuerpo JSON:
+
+```json
+{
+  "name": "Pilates para principiantes",
+  "description": "Clase de iniciación al Pilates",
+  "duration": 45,
+  "price": 16,
+  "category": "Pilates",
+  "available": true
+}
+```
+
+El identificador se genera automáticamente.
+
+Las peticiones `PUT` también reciben los datos en formato JSON y permiten actualizar un servicio existente sin modificar su identificador.
+
+### Códigos de respuesta
+
+- `200 OK`: operación realizada correctamente.
+- `201 Created`: servicio creado correctamente.
+- `400 Bad Request`: faltan campos obligatorios al crear un servicio.
+- `404 Not Found`: el servicio solicitado no existe.
 
 ## Estructura del proyecto
 
-
+```text
 backend-turnos-reservas/
 ├── src/
 │   ├── config/
@@ -79,7 +124,7 @@ backend-turnos-reservas/
 ├── package.json
 ├── package-lock.json
 └── README.md
-
+```
 
 ## Gestión de servicios
 
@@ -103,51 +148,50 @@ Cada servicio contiene los siguientes campos:
 
 ## Notas
 
-- Las variables de entorno se configuran mediante el archivo `.env`.
+- Las variables de entorno se configuran mediante `.env`.
 - El archivo `.env` no debe subirse al repositorio.
 - El archivo `.env.example` sirve como plantilla de configuración.
-- Los datos se gestionan en memoria a partir de `services.json`; los cambios realizados durante la ejecución no se guardan automáticamente en el archivo JSON.
+- Los datos se cargan inicialmente desde `services.json`.
+- Los cambios realizados durante la ejecución se mantienen en memoria y no se guardan automáticamente en el archivo JSON.
+
 ## Ejemplos de uso de ServiceManager
 
-Los siguientes ejemplos muestran cómo utilizar los métodos de `ServiceManager`.
+Los siguientes ejemplos ilustran cómo utilizar los métodos de `ServiceManager`:
 
 ```javascript
 import { ServiceManager } from './src/managers/ServiceManager.js'
 
-// Creamos un administrador de servicios.
 const serviceManager = new ServiceManager()
 
-// 1. Obtener todos los servicios.
+// Obtener todos los servicios.
 const services = serviceManager.getServices()
 console.log(services)
 
-// 2. Buscar un servicio por su ID.
+// Buscar un servicio por su ID.
 const service = serviceManager.getServiceById(2)
 console.log(service)
 
-// 3. Añadir un servicio nuevo.
-// El ID se genera automáticamente.
+// Añadir un servicio nuevo.
 const newService = serviceManager.addService({
-    name: 'Pilates para principiantes',
-    description: 'Clase de iniciación al Pilates',
-    duration: 45,
-    price: 16,
-    category: 'Pilates',
-    available: true
+  name: 'Pilates para principiantes',
+  description: 'Clase de iniciación al Pilates',
+  duration: 45,
+  price: 16,
+  category: 'Pilates',
+  available: true
 })
 console.log(newService)
 
-// 4. Actualizar el precio del servicio creado.
+// Actualizar el precio del servicio creado.
 const updatedService = serviceManager.updateService(
-    newService.id,
-    { price: 19 }
+  newService.id,
+  { price: 19 }
 )
 console.log(updatedService)
 
-// 5. Eliminar el servicio creado.
+// Eliminar el servicio creado.
 const deletedService = serviceManager.deleteService(newService.id)
 console.log(deletedService)
 ```
 
-
-**Nota:** estos ejemplos son ilustrativos. Los cambios se realizan en memoria y no se guardan automáticamente en `services.json`.
+**Nota:** estos ejemplos son ilustrativos. Las operaciones se realizan en memoria y no guardan automáticamente los cambios en `services.json`.
