@@ -3,12 +3,25 @@
     Importamos los servicios desde services.json.
     Estos son los datos iniciales de nuestras clases.
 */
-import servicesData from '../data/services.json' with { type: 'json' }
 
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 /*
     La clase ServiceManager administra los servicios
     de Pilates y postparto.
 */
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+
+const servicesFilePath = path.join(
+    __dirname,
+    '../data/services.json'
+)
+
+
 export class ServiceManager {
 
     /*
@@ -18,8 +31,22 @@ export class ServiceManager {
         [...servicesData] crea una copia de la lista.
     */
     constructor() {
-        this.services = [...servicesData]
+        //leemos los servicios guardados en el archivo
+        const fileContent = fs.readFileSync(
+            servicesFilePath,
+            'utf-8'
+        )
+        this.services =JSON.parse(fileContent)
     }
+// guarda la lista actual en el services.json
+ saveServices() {
+   fs.writeFileSync(
+    servicesFilePath,
+    JSON.stringify(this.services,null , 2),
+    'utf-8'
+   )
+ }
+
 
     /*
         MÉTODO 1: getServices()
@@ -91,6 +118,7 @@ export class ServiceManager {
 
         // Añadimos la nueva clase a la lista.
         this.services.push(newService)/*De todas mis clases (services), encuentra una (service) cuyo ID coincida con el que necesito */
+        this.saveServices()// NUEVO: guardamos el servicio en el archivo.
 
         // Devolvemos la clase que acabamos de crear.
         return newService
@@ -121,6 +149,8 @@ export class ServiceManager {
             id: this.services[index].id
         }
 
+        this.saveServices() //  guardamos los cambios.
+
         // Devolvemos la clase actualizada.
         return this.services[index]
     }
@@ -145,6 +175,9 @@ export class ServiceManager {
 
         // Eliminamos un elemento de la lista.
         const deletedServices = this.services.splice(index, 1)
+
+
+       this.saveServices()// NUEVO: guardamos la eliminación.
 
         // Devolvemos la clase eliminada.
         return deletedServices[0]
