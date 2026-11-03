@@ -1,76 +1,39 @@
-import { Router } from 'express'
-import { BookingManager} from '../managers/BookingManager.js'
-import { ServiceManager } from '../managers/ServiceManager.js'
+// Importamos Router desde Express.
+// Router nos permite crear rutas independientes de la aplicación principal.
 
+import {Router} from 'express'
+
+// Importamos las tres funciones del controlador de reservas.
+// Estas funciones contienen la lógica para crear, consultar
+// y agregar servicios a una reserva.
+import {
+    createBooking,
+    getBookingById,
+    addServiceToBooking
+} from '../controllers/bookings.controller.js'
+
+// Creamos una instancia del router.
+// Aquí vamos a definir las direcciones de nuestra API.
 const router = Router()
 
-const bookingManager = new BookingManager()
-const serviceManager = new ServiceManager()
+// POST '/' permite crear una nueva reserva.
+// Cuando llega una petición POST, ejecuta createBooking.
+router.post('/', createBooking)
 
-// POST /api/bookings
-// Crear una reserva nueva.
+// GET '/:bid' permite buscar una reserva por su identificador.
+// :bid es un parámetro variable que contiene el ID de la reserva.
+// La función getBookingById se encarga de buscarla.
+router.get('/:bid', getBookingById)
 
-router.post ('/', (req, res)=>{
-    try {
-        const booking = bookingManager.createBooking(req.body)
-        res.status(201).json(booking)
-    }catch(error){
-        res.status(400).json({
-            error: error.message
-        })
-    }
-})
 
-// GET /api/bookings/:bid
-// Buscar una reserva por su ID.
-router.get ('/:bid', (req, res)=>{
+// POST '/:bid/services/:sid' permite agregar un servicio a una reserva.
+// :bid representa el ID de la reserva.
+// :sid representa el ID del servicio que queremos agregar.
+// La función addServiceToBooking realiza la operación.
+router.post('/:bid/services/:sid', addServiceToBooking)
 
-    const id = Number(req.params.bid)
 
-    if (!Number.isInteger(id) || id <= 0) {
 
-        return res.status(400).json({
-            error: 'elIDdebe ser un numero positivo'
-        })
-    }
-
-    const booking = bookingManager.getBookingById(id)
-
-    if (!booking){
-        return res.status(404).json({
-            error:'reserva no encontrada '
-        })
-    }
-    res.json(booking)
-
-})
-// POST /api/bookings/:bid/services/:sid
-// Añadir un servicio a una reserva.
-
-router.post ('/:bid/services/:sid',(req,res)=>{
-    const bookingId=Number(req.params.bid)
-    const serviceId= Number(req.params.sid)
-
-    if(
-    !Number.isInteger(bookingId)||
-    bookingId<=0||
-    !Number.isInteger(serviceId)||
-    serviceId<=0
-    ){
-        return res.status(400).json({
-            error:'Los IDs deben ser numeros positivos'
-        })
-    }
-    const result = bookingManager.addServiceToBooking(
-        bookingId,
-        serviceId,
-        serviceManager
-    )
-    if (result.error) {
-        return res.status(404).json({
-            error: result.error
-        })
-    }
-    res.json(result)
-})
+// Exportamos el router para que app.js pueda utilizarlo.
+// Así las rutas quedan disponibles en nuestra aplicación.
 export default router

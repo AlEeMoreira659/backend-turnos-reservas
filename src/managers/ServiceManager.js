@@ -1,186 +1,163 @@
 
-/*
-    Importamos los servicios desde services.json.
-    Estos son los datos iniciales de nuestras clases.
-*/
-
+// Importamos fs para leer y escribir archivos.
 import fs from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-/*
-    La clase ServiceManager administra los servicios
-    de Pilates y postparto.
-*/
 
+// Importamos path para construir rutas de archivos.
+import path from 'node:path'
+
+// Importamos fileURLToPath para obtener la ruta de este archivo.
+import { fileURLToPath } from 'node:url'
+
+// Obtenemos la ubicación actual del archivo ServiceManager.js.
 const __filename = fileURLToPath(import.meta.url)
+
+// Obtenemos la carpeta donde se encuentra este archivo.
 const __dirname = path.dirname(__filename)
 
-
+// Construimos la ruta del archivo services.json.
 const servicesFilePath = path.join(
-    __dirname,
-    '../data/services.json'
+  __dirname,
+  '../data/services.json'
 )
 
-
+// Creamos la clase ServiceManager.
+// Esta clase administra los datos de los servicios.
 export class ServiceManager {
 
-    /*
-        El constructor se ejecuta cuando creamos
-        un nuevo objeto ServiceManager.
+  // El constructor se ejecuta al crear un objeto ServiceManager.
+  constructor() {
 
-        [...servicesData] crea una copia de la lista.
-    */
-    constructor() {
-        //leemos los servicios guardados en el archivo
-        const fileContent = fs.readFileSync(
-            servicesFilePath,
-            'utf-8'
-        )
-        this.services =JSON.parse(fileContent)
-    }
-// guarda la lista actual en el services.json
- saveServices() {
-   fs.writeFileSync(
-    servicesFilePath,
-    JSON.stringify(this.services,null , 2),
-    'utf-8'
-   )
- }
+    // Leemos el contenido del archivo services.json.
+    const fileContent = fs.readFileSync(
+      servicesFilePath,
+      'utf-8'
+    )
 
+    // Convertimos el texto JSON en una lista de JavaScript.
+    this.services = JSON.parse(fileContent)
+  }
 
-    /*
-        MÉTODO 1: getServices()
+  // Guarda los servicios actuales dentro del archivo JSON.
+  saveServices() {
+    fs.writeFileSync(
+      servicesFilePath,
+      JSON.stringify(this.services, null, 2),
+      'utf-8'
+    )
+  }
 
-        Devuelve todas las clases disponibles en la lista.
-    */
+  // MÉTODO 1: devuelve todos los servicios.
   getServices() {
-    
     return this.services
+  }
+
+  // MÉTODO 2: busca un servicio por su ID.
+  // Si no lo encuentra, devuelve null.
+  getServiceById(id) {
+    const service = this.services.find(
+      service => service.id === id
+    )
+
+    return service || null
+  }
+
+  // MÉTODO 3: agrega un servicio nuevo.
+  addService(serviceData) {
+
+    // Definimos los campos obligatorios.
+    const requiredFields = [
+      'name',
+      'description',
+      'duration',
+      'price',
+      'category',
+      'available'
+    ]
+
+    // Comprobamos que estén presentes todos los campos.
+    for (const field of requiredFields) {
+      if (
+        serviceData[field] === undefined ||
+        serviceData[field] === null ||
+        serviceData[field] === ''
+      ) {
+        throw new Error(
+          `Falta el campo obligatorio: ${field}`
+        )
+      }
+    }
+
+    // Generamos un ID nuevo y consecutivo.
+    const newId = this.services.length > 0
+      ? Math.max(
+          ...this.services.map(service => service.id)
+        ) + 1
+      : 1
+
+    // Creamos el servicio y le asignamos su nuevo ID.
+    const newService = {
+      ...serviceData,
+      id: newId
+    }
+
+    // Añadimos el servicio a la lista.
+    this.services.push(newService)
+
+    // Guardamos la lista actualizada en services.json.
+    this.saveServices()
+
+    // Devolvemos el servicio creado.
+    return newService
+  }
+
+  // MÉTODO 4: actualiza los datos de un servicio.
+  updateService(id, updatedData) {
+
+    // Buscamos la posición del servicio dentro de la lista.
+    const index = this.services.findIndex(
+      service => service.id === id
+    )
+
+    // Si no existe, devolvemos null.
+    if (index === -1) {
+      return null
+    }
+
+    // Combinamos los datos anteriores con los nuevos.
+    // Conservamos el ID original.
+    this.services[index] = {
+      ...this.services[index],
+      ...updatedData,
+      id: this.services[index].id
+    }
+
+    // Guardamos los cambios en el archivo JSON.
+    this.saveServices()
+
+    // Devolvemos el servicio actualizado.
+    return this.services[index]
+  }
+
+  // MÉTODO 5: elimina un servicio por su ID.
+  deleteService(id) {
+
+    // Buscamos la posición del servicio.
+    const index = this.services.findIndex(
+      service => service.id === id
+    )
+
+    // Si no existe, devolvemos null.
+    if (index === -1) {
+      return null
+    }
+
+    // Eliminamos el servicio de la lista.
+    const deletedServices = this.services.splice(index, 1)
+
+    // Guardamos la lista después de eliminarlo.
+    this.saveServices()
+
+    // Devolvemos el servicio que fue eliminado.
+    return deletedServices[0]
+  }
 }
-    /*
-        MÉTODO 2: getServiceById(id)
-
-        Busca una clase utilizando su identificador.
-        Si no la encuentra, devuelve null.
-    */
-    getServiceById(id) {
-        const service = this.services.find(
-            service => service.id === id
-        )
-
-        return service || null
-    }
-
-    /*
-        MÉTODO 3: addService(serviceData)
-
-        Añade una clase nueva a la lista.
-        El ID lo genera el programa, no quien añade la clase.
-    */
-    addService(serviceData) {
-
-        // Campos obligatorios de cada clase.
-        const requiredFields = [
-            'name',
-            'description',
-            'duration',
-            'price',
-            'category',
-            'available'
-        ]
-
-        // Comprobamos que no falte ningún campo.
-        for (const field of requiredFields) {
-            if (
-                serviceData[field] === undefined ||/*[]Para acceder a una propiedad usando una variable Busca dentro de serviceData la propiedad cuyo nombre está guardado en la variable field».
-                Por ejemplo, si field contiene 'name'*/
-                serviceData[field] === null ||
-                serviceData[field] === ''
-            ) {
-                throw new Error(
-                    `Falta el campo obligatorio: ${field}`
-                )
-            }
-        }
-
-        // Calculamos el siguiente ID disponible.
-        const newId = this.services.length > 0
-            ? Math.max(
-                ...this.services.map(service => service.id)
-            ) + 1
-            : 1
-
-        // Creamos la nueva clase con su ID generado.
-        const newService = {
-            ...serviceData,/*... se usa para copiar elementos de una lista o propiedades de un objeto  */
-            id: newId
-        }
-
-        // Añadimos la nueva clase a la lista.
-        this.services.push(newService)/*De todas mis clases (services), encuentra una (service) cuyo ID coincida con el que necesito */
-        this.saveServices()// NUEVO: guardamos el servicio en el archivo.
-
-        // Devolvemos la clase que acabamos de crear.
-        return newService
-    }
-
-    /*
-        MÉTODO 4: updateService(id, updatedData)
-
-        Busca una clase y actualiza sus datos.
-        Conserva siempre el ID original.
-    */
-    updateService(id, updatedData) {
-
-        // Buscamos la posición de la clase en la lista.
-        const index = this.services.findIndex(
-            service => service.id === id
-        )
-
-        // Si no existe, devolvemos null.
-        if (index === -1) {
-            return null
-        }
-
-        // Actualizamos los datos sin cambiar el ID.
-        this.services[index] = {
-            ...this.services[index],/* [] usando principalmente para crear listas y acceder a datos. */
-            ...updatedData,
-            id: this.services[index].id
-        }
-
-        this.saveServices() //  guardamos los cambios.
-
-        // Devolvemos la clase actualizada.
-        return this.services[index]
-    }
-
-    /*
-        MÉTODO 5: deleteService(id)
-
-        Elimina una clase utilizando su ID.
-        Si no existe, devuelve null.
-    */
-    deleteService(id) {
-
-        // Buscamos la posición de la clase.
-        const index = this.services.findIndex(
-            service => service.id === id
-        )
-
-        // Si no la encontramos, no hay nada que eliminar.
-        if (index === -1) {
-            return null
-        }
-
-        // Eliminamos un elemento de la lista.
-        const deletedServices = this.services.splice(index, 1)
-
-
-       this.saveServices()// NUEVO: guardamos la eliminación.
-
-        // Devolvemos la clase eliminada.
-        return deletedServices[0]
-    }
-}
-

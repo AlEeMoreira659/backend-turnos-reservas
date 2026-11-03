@@ -1,93 +1,40 @@
-/*Este archivo será el encargado de recibir las peticiones relacionadas con los servicios de Pilates.magina que una clienta quiere consultar tus clases, reservar información sobre Pilates postparto o que tú necesitas modificar el precio de una clase. La aplicación necesita saber qué hacer cuando alguien solicita cada operación.*/
-import {Router} from 'express'
-import { ServiceManager } from '../managers/ServiceManager.js'
-
-//creamos un router para organizar las rutas de los servicios Traemos de Express una herramienta llamada Router. Nos permite crear y organizar las direcciones de nuestra API.
-
-const router = Router() //Creamos nuestro router. Piensa en él como una pequeña centralita que organiza las peticiones relacionadas con los servicios.
-
-// Creamos el administrador que gestiona los servicios.
-const serviceManager = new ServiceManager()
-
-// GET: permite consultar todos los servicios 
-
-router.get('/', (req, res) => {//Indicamos qué debe ocurrir cuando alguien hace una petición GET a la ruta principal de este router. El símbolo '/' representa la ruta raíz del router, no toda la dirección final.
-//req significa request: la petición que llega.
-//res significa response: la respuesta que enviamos.
-
-let services = serviceManager.getServices()
-
- const { category, available } = req.query
-
-if(category){
-    services= services.filter (
-        
-         service => service.category.toLowerCase() === category.toLowerCase()
-    )
-}
-if(available !==undefined){
-    services= services.filter(
-         service => service.available === (available === 'true')
-    )
-}
-  res.json(services)
-})
-
-router.get('/:id', (req , res) =>{
-    const id = Number (req.params.id)
-    const service = serviceManager.getServiceById(id)
-
-if (! service){
-    return res.status(404).json({
-        error:'servicio no encontrado'
-    })
-}
- res.json(service)
-})
 
 
-router.post('/', (req, res) => {
-    
+// Importamos Router desde Express.
+// Nos permite crear y organizar las rutas de servicios.
+import { Router } from 'express'
 
-    try {
-        const newService = serviceManager.addService(req.body)
+// Importamos las funciones del controlador de servicios.
+// Cada función se encarga de una operación diferente.
+import {
+  getServices,
+  getServiceById,
+  createService,
+  updateService,
+  deleteService
+} from '../controllers/services.controller.js'
 
-        res.status(201).json(newService)
-    } catch (error) {
-        res.status(400).json({
-            error: error.message
-        })
-    }
-})
+// Creamos una instancia del router.
+const router = Router()
 
-router.put('/:id',(req, res)=>{
-    const id = Number(req.params.id)
+// GET '/' obtiene todos los servicios.
+// También permite aplicar filtros mediante parámetros de consulta.
+router.get('/', getServices)
 
-    const updatedService = serviceManager.updateService(
-        id,
-        req.body
-    )
-    if(!updatedService){
-        return res.status(404).json({
-            error: 'servicio no  encontrado'
-        })
-    }
-    res.json(updatedService)
-})
+// GET '/:sid' busca un servicio por su identificador.
+// :sid representa el ID del servicio.
+router.get('/:sid', getServiceById)
 
-router.delete('/:id', (req, res)=>{
-    const id = Number(req.params.id)
-    const deleteService = serviceManager.deleteService(id)
-    if(!deleteService){
-        return res.status(404).json ({
-            error: 'servicio no encontrado'
-        })
-    }
-    res.json({
-        mensaje:'Servicio eliminado correctamente ',
-        servicio: deleteService
-    })
-})
-//exportamps el router para poder utilizarlo en app.js
+// POST '/' permite crear un nuevo servicio.
+router.post('/', createService)
 
+// PUT '/:sid' permite modificar un servicio existente.
+// :sid indica qué servicio queremos modificar.
+router.put('/:sid', updateService)
+
+// DELETE '/:sid' permite eliminar un servicio.
+// :sid indica qué servicio queremos eliminar.
+router.delete('/:sid', deleteService)
+
+// Exportamos el router para utilizarlo en app.js.
 export default router

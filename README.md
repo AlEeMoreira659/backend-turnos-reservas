@@ -4,9 +4,15 @@
 
 Este proyecto es una API REST desarrollada con Node.js y Express para gestionar servicios relacionados con clases de Pilates y actividades de postparto, así como reservas de clientes.
 
-La API permite consultar, crear, actualizar y eliminar servicios, crear y consultar reservas, y añadir servicios a una reserva.
+La API permite consultar, crear, actualizar y eliminar servicios, crear y consultar reservas y añadir servicios a una reserva.
 
-Los datos se almacenan en archivos JSON mediante las clases `ServiceManager` y `BookingManager`, que gestionan la lectura y escritura de la información.
+Los datos se almacenan en archivos JSON mediante las clases `ServiceManager` y `BookingManager`.
+
+La API está organizada en tres capas para separar las responsabilidades:
+
+- **Routes:** definen los endpoints y conectan las rutas con sus controladores.
+- **Controllers:** reciben las peticiones HTTP, obtienen los datos necesarios, llaman a los gestores y devuelven las respuestas.
+- **Managers:** gestionan la lógica de los datos y su persistencia en archivos JSON.
 
 ## Tecnologías utilizadas
 
@@ -51,6 +57,84 @@ El servidor estará disponible en:
 
 `http://localhost:8080`
 
+## Arquitectura del proyecto
+
+La aplicación utiliza una arquitectura organizada en tres capas:
+
+### 1. Routes
+
+La carpeta `routes` contiene los routers de servicios y reservas.
+
+Su responsabilidad es definir las rutas HTTP y asociarlas con las funciones correspondientes de los controladores.
+
+Los routers no contienen lógica de negocio ni gestionan directamente los datos.
+
+Archivos:
+
+- `services.router.js`
+- `bookings.router.js`
+
+### 2. Controllers
+
+La carpeta `controllers` contiene los controladores que gestionan las peticiones y respuestas HTTP.
+
+Los controladores reciben los datos de `req.params`, `req.query` y `req.body`, llaman a los métodos de los managers y devuelven las respuestas mediante `res.status().json()`.
+
+Archivos y funciones:
+
+**services.controller.js**
+
+- `getServices`: obtiene y filtra los servicios.
+- `getServiceById`: busca un servicio por su ID.
+- `createService`: crea un servicio.
+- `updateService`: actualiza un servicio.
+- `deleteService`: elimina un servicio.
+
+**bookings.controller.js**
+
+- `createBooking`: crea una reserva.
+- `getBookingById`: consulta una reserva por su ID.
+- `addServiceToBooking`: añade un servicio a una reserva y comprueba que el servicio exista.
+
+### 3. Managers
+
+La carpeta `managers` contiene las clases encargadas de gestionar los datos y su persistencia.
+
+No reciben objetos `req` ni `res`, ya que su responsabilidad es trabajar con los datos independientemente de las peticiones HTTP.
+
+Archivos:
+
+- `ServiceManager.js`: gestiona los servicios.
+- `BookingManager.js`: gestiona las reservas.
+
+## Estructura del proyecto
+
+```text
+backend-turnos-reservas/
+├── src/
+│   ├── config/
+│   │   └── env.config.js
+│   ├── controllers/
+│   │   ├── services.controller.js
+│   │   └── bookings.controller.js
+│   ├── managers/
+│   │   ├── ServiceManager.js
+│   │   └── BookingManager.js
+│   ├── routes/
+│   │   ├── services.router.js
+│   │   └── bookings.router.js
+│   ├── data/
+│   │   ├── services.json
+│   │   └── bookings.json
+│   ├── app.js
+│   └── server.js
+├── .env.example
+├── .gitignore
+├── package.json
+├── package-lock.json
+└── README.md
+```
+
 ## Endpoints de servicios
 
 Todas las rutas de servicios utilizan el prefijo `/api/services`.
@@ -80,7 +164,7 @@ GET /api/services?category=Postparto&available=true
 
 ### Crear un servicio
 
-La petición `POST /api/services` debe incluir un cuerpo JSON con los campos obligatorios:
+La petición `POST /api/services` debe incluir un cuerpo JSON con los siguientes campos:
 
 - `name`
 - `description`
@@ -126,7 +210,7 @@ La petición `POST /api/bookings` debe incluir los siguientes campos:
 - `time`: hora de la reserva.
 - `status`: estado de la reserva.
 
-Ejemplo de cuerpo JSON:
+Ejemplo:
 
 ```json
 {
@@ -156,84 +240,11 @@ POST /api/bookings/1/services/2
 
 Esta petición añade el servicio con ID `2` a la reserva con ID `1`.
 
+El controlador comprueba que el servicio exista antes de añadirlo.
+
 Si el servicio ya está incluido en la reserva, se incrementa su cantidad (`quantity`) en lugar de crear otra entrada para el mismo servicio.
 
 ## Persistencia de datos
 
 Los datos se almacenan en los siguientes archivos:
 
-- `src/data/services.json`: contiene los servicios.
-- `src/data/bookings.json`: contiene las reservas.
-
-Los gestores utilizan el módulo FileSystem de Node.js para leer y escribir los archivos JSON. Por tanto, las modificaciones se conservan después de reiniciar el servidor.
-
-## Estructura del proyecto
-
-```text
-backend-turnos-reservas/
-├── src/
-│   ├── config/
-│   │   └── env.config.js
-│   ├── data/
-│   │   ├── services.json
-│   │   └── bookings.json
-│   ├── managers/
-│   │   ├── ServiceManager.js
-│   │   └── BookingManager.js
-│   ├── routes/
-│   │   ├── services.router.js
-│   │   └── bookings.router.js
-│   ├── app.js
-│   └── server.js
-├── .env.example
-├── .gitignore
-├── package.json
-├── package-lock.json
-└── README.md
-```
-
-## Gestión de servicios: ServiceManager
-
-La clase `ServiceManager` incluye los siguientes métodos:
-
-- `getServices()`: devuelve todos los servicios.
-- `getServiceById(id)`: busca un servicio por su identificador.
-- `addService(serviceData)`: añade un servicio y genera su ID automáticamente.
-- `updateService(id, updatedData)`: actualiza un servicio existente.
-- `deleteService(id)`: elimina un servicio.
-
-Los cambios se guardan en `services.json`.
-
-## Gestión de reservas: BookingManager
-
-La clase `BookingManager` incluye los siguientes métodos:
-
-- `createBooking(bookingData)`: crea una reserva con un ID automático.
-- `getBookingById(id)`: busca una reserva por su identificador.
-- `addServiceToBooking(bookingId, serviceId, serviceManager)`: añade un servicio a una reserva o incrementa su cantidad si ya existe.
-
-Los cambios se guardan en `bookings.json`.
-
-## Códigos de respuesta HTTP
-
-La API utiliza, según la operación, los siguientes códigos:
-
-- `200 OK`: operación realizada correctamente.
-- `201 Created`: recurso creado correctamente.
-- `400 Bad Request`: petición o datos obligatorios incorrectos.
-- `404 Not Found`: servicio o reserva no encontrados.
-
-## Variables de entorno y seguridad
-
-- Las variables de entorno se configuran mediante `.env`.
-- El archivo `.env` no debe subirse al repositorio.
-- El archivo `.env.example` sirve como plantilla de configuración.
-- La carpeta `node_modules` no debe incluirse en GitHub.
-
-## Datos iniciales
-
-Los archivos JSON contienen los datos iniciales utilizados por la API. Para comenzar con una lista de reservas vacía, `bookings.json` debe contener:
-
-```json
-[]
-```
