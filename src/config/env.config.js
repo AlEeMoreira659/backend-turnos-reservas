@@ -1,34 +1,25 @@
 
-/*
-  Importamos dotenv/config para cargar las variables
-  de entorno que están guardadas en el archivo .env.
-*/
 import 'dotenv/config'
 
-/*
-  Creamos una lista con las variables de entorno
-  que nuestro proyecto necesita obligatoriamente.
-*/
+// Variables de entorno obligatorias.
 const requiredEnvVars = ['PORT', 'NODE_ENV']
 
-/*
-  Recorremos la lista para comprobar cada variable.
-  "variable" representa cada nombre en cada vuelta.
-*/
+// Comprobamos que todas existan.
 for (const variable of requiredEnvVars) {
-
-    /*
-      Comprobamos que la variable exista y no esté vacía.
-    */
-    if (!process.env[variable]) {
-        throw new Error(`Falta la variable de entorno ${variable}`)
-    }
+  if (!process.env[variable]) {
+    throw new Error(`Falta la variable de entorno ${variable}`)
+  }
 }
 
-/*
-  Exportamos la configuración para utilizarla en app.js.
-*/
+// Convertimos el puerto a número.
+const port = Number(process.env.PORT)
+
+if (!Number.isInteger(port) || port <= 0) {
+  throw new Error('La variable PORT debe ser un número entero positivo')
+}
+
+// Exportamos la configuración.
 export const env = {
-    PORT: Number(process.env.PORT),
-    NODE_ENV: process.env.NODE_ENV
+  PORT: port,
+  NODE_ENV: process.env.NODE_ENV
 }

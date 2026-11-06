@@ -6,13 +6,13 @@ Este proyecto es una API REST desarrollada con Node.js y Express para gestionar 
 
 La API permite consultar, crear, actualizar y eliminar servicios, crear y consultar reservas y añadir servicios a una reserva.
 
-Los datos se almacenan en archivos JSON mediante las clases `ServiceManager` y `BookingManager`.
+Los datos se almacenan en archivos JSON mediante una arquitectura en capas que separa las responsabilidades de cada parte de la aplicación.
 
-La API está organizada en tres capas para separar las responsabilidades:
+La arquitectura sigue el siguiente flujo:
 
-- **Routes:** definen los endpoints y conectan las rutas con sus controladores.
-- **Controllers:** reciben las peticiones HTTP, obtienen los datos necesarios, llaman a los gestores y devuelven las respuestas.
-- **Managers:** gestionan la lógica de los datos y su persistencia en archivos JSON.
+**Routes → Controllers → Services → Repositories → DAO → JSON**
+
+Esta organización facilita el mantenimiento, la reutilización del código y una futura migración a una base de datos como MongoDB.
 
 ## Tecnologías utilizadas
 
@@ -20,11 +20,15 @@ La API está organizada en tres capas para separar las responsabilidades:
 - Express
 - JavaScript (ES Modules)
 - dotenv
-- JSON y FileSystem de Node.js
+- JSON
+- FileSystem de Node.js
 
 ## Requisitos previos
 
-Es necesario tener instalado Node.js y npm.
+Es necesario tener instalado:
+
+- Node.js
+- npm
 
 ## Instalación
 
@@ -36,7 +40,7 @@ Es necesario tener instalado Node.js y npm.
 npm install
 ```
 
-4. Crear un archivo `.env` en la raíz del proyecto con estas variables:
+4. Crear un archivo `.env` en la raíz del proyecto con las siguientes variables:
 
 ```dotenv
 PORT=8080
@@ -59,15 +63,15 @@ El servidor estará disponible en:
 
 ## Arquitectura del proyecto
 
-La aplicación utiliza una arquitectura organizada en tres capas:
+La aplicación utiliza una arquitectura organizada en seis capas, cada una con una responsabilidad específica.
 
 ### 1. Routes
 
 La carpeta `routes` contiene los routers de servicios y reservas.
 
-Su responsabilidad es definir las rutas HTTP y asociarlas con las funciones correspondientes de los controladores.
+Su responsabilidad es definir los endpoints HTTP y conectar las rutas con las funciones correspondientes de los controladores.
 
-Los routers no contienen lógica de negocio ni gestionan directamente los datos.
+Los routers no contienen lógica de negocio ni acceden directamente a los datos.
 
 Archivos:
 
@@ -78,7 +82,9 @@ Archivos:
 
 La carpeta `controllers` contiene los controladores que gestionan las peticiones y respuestas HTTP.
 
-Los controladores reciben los datos de `req.params`, `req.query` y `req.body`, llaman a los métodos de los managers y devuelven las respuestas mediante `res.status().json()`.
+Los controladores reciben los datos de `req.params`, `req.query` y `req.body`, llaman a los services y devuelven las respuestas mediante `res.status().json()`.
+
+Los controladores son la única capa que trabaja directamente con los objetos `req` y `res`.
 
 Archivos y funciones:
 
@@ -94,18 +100,67 @@ Archivos y funciones:
 
 - `createBooking`: crea una reserva.
 - `getBookingById`: consulta una reserva por su ID.
-- `addServiceToBooking`: añade un servicio a una reserva y comprueba que el servicio exista.
+- `addServiceToBooking`: añade un servicio a una reserva.
 
-### 3. Managers
+### 3. Services
 
-La carpeta `managers` contiene las clases encargadas de gestionar los datos y su persistencia.
+La carpeta `services` contiene la lógica de negocio de la aplicación.
 
-No reciben objetos `req` ni `res`, ya que su responsabilidad es trabajar con los datos independientemente de las peticiones HTTP.
+Se encarga de aplicar las reglas necesarias y coordinar las operaciones solicitadas a los repositories.
 
 Archivos:
 
-- `ServiceManager.js`: gestiona los servicios.
-- `BookingManager.js`: gestiona las reservas.
+- `services.service.js`: gestiona las operaciones y los filtros de servicios.
+- `bookings.service.js`: gestiona las operaciones de reservas y las reglas para añadir servicios.
+
+Una de las reglas de negocio consiste en que, si se añade a una reserva un servicio que ya existe en ella, se incrementa su cantidad (`quantity`) en lugar de crear una entrada duplicada.
+
+También comprueba que la reserva y el servicio existan antes de realizar la operación.
+
+### 4. Repositories
+
+La carpeta `repositories` actúa como intermediaria entre los services y los DAO.
+
+Su responsabilidad es ofrecer métodos para consultar, crear, actualizar y eliminar datos.
+
+Los repositories no contienen lógica de negocio ni acceden directamente a las peticiones HTTP.
+
+Archivos:
+
+- `services.repository.js`
+- `bookings.repository.js`
+
+### 5. DAO (Data Access Object)
+
+La carpeta `dao` contiene los módulos encargados del acceso directo a los datos.
+
+Su responsabilidad es leer y escribir los archivos JSON utilizando el módulo FileSystem de Node.js.
+
+Los DAO no contienen lógica de negocio.
+
+Archivos:
+
+- `services.dao.js`
+- `bookings.dao.js`
+
+### 6. Data
+
+La carpeta `data` contiene los archivos JSON donde se almacenan los datos de la aplicación.
+
+Archivos:
+
+- `services.json`: almacena los servicios.
+- `bookings.json`: almacena las reservas.
+
+### Flujo de funcionamiento
+
+Todas las operaciones siguen el siguiente recorrido:
+
+**Router → Controller → Service → Repository → DAO → JSON**
+
+Cada capa se comunica únicamente con la siguiente, manteniendo separadas las responsabilidades de la aplicación.
+
+Esta organización permite sustituir en el futuro el almacenamiento en archivos JSON por una base de datos como MongoDB, modificando principalmente la capa DAO.
 
 ## Estructura del proyecto
 
@@ -117,9 +172,15 @@ backend-turnos-reservas/
 │   ├── controllers/
 │   │   ├── services.controller.js
 │   │   └── bookings.controller.js
-│   ├── managers/
-│   │   ├── ServiceManager.js
-│   │   └── BookingManager.js
+│   ├── services/
+│   │   ├── services.service.js
+│   │   └── bookings.service.js
+│   ├── repositories/
+│   │   ├── services.repository.js
+│   │   └── bookings.repository.js
+│   ├── dao/
+│   │   ├── services.dao.js
+│   │   └── bookings.dao.js
 │   ├── routes/
 │   │   ├── services.router.js
 │   │   └── bookings.router.js
@@ -149,7 +210,7 @@ Todas las rutas de servicios utilizan el prefijo `/api/services`.
 
 ### Filtrar servicios
 
-La ruta `GET /api/services` permite utilizar estos parámetros de consulta:
+La ruta `GET /api/services` permite utilizar los siguientes parámetros de consulta:
 
 - `category`: filtra por categoría.
 - `available`: filtra por disponibilidad (`true` o `false`).
@@ -190,6 +251,8 @@ El identificador `id` se genera automáticamente.
 
 La petición `PUT /api/services/:sid` permite actualizar un servicio existente sin modificar su identificador.
 
+La petición `DELETE /api/services/:sid` permite eliminar un servicio existente.
+
 ## Endpoints de reservas
 
 Todas las rutas de reservas utilizan el prefijo `/api/bookings`.
@@ -224,6 +287,16 @@ Ejemplo:
 
 El identificador `id` se genera automáticamente y la reserva se crea con una lista `services` vacía.
 
+### Consultar una reserva
+
+La petición `GET /api/bookings/:bid` permite consultar una reserva utilizando su identificador.
+
+Ejemplo:
+
+```http
+GET /api/bookings/1
+```
+
 ### Añadir un servicio a una reserva
 
 Para añadir un servicio se utiliza la ruta:
@@ -240,11 +313,42 @@ POST /api/bookings/1/services/2
 
 Esta petición añade el servicio con ID `2` a la reserva con ID `1`.
 
-El controlador comprueba que el servicio exista antes de añadirlo.
+El service comprueba que la reserva y el servicio existan antes de realizar la operación.
 
 Si el servicio ya está incluido en la reserva, se incrementa su cantidad (`quantity`) en lugar de crear otra entrada para el mismo servicio.
 
 ## Persistencia de datos
 
-Los datos se almacenan en los siguientes archivos:
+Los datos de la aplicación se almacenan en archivos JSON ubicados en la carpeta `src/data/`.
 
+Los DAO son los únicos módulos encargados de acceder directamente a estos archivos mediante FileSystem de Node.js.
+
+Los controllers, services y repositories no acceden directamente a los archivos JSON.
+
+Esta separación permite modificar el sistema de almacenamiento en el futuro sin tener que cambiar toda la lógica de la aplicación.
+
+## Variables de entorno
+
+La aplicación utiliza variables de entorno para configurar el servidor.
+
+Las variables necesarias son:
+
+- `PORT`: puerto en el que se ejecuta el servidor.
+- `NODE_ENV`: entorno de ejecución de la aplicación.
+
+El archivo `.env` contiene la configuración local y no debe subirse al repositorio.
+
+El archivo `.env.example` sirve como plantilla para indicar las variables necesarias.
+
+## Control de versiones
+
+El archivo `.gitignore` evita subir al repositorio:
+
+- `node_modules`
+- `.env`
+
+De esta forma se evita incluir dependencias instaladas y configuraciones locales o credenciales en el repositorio.
+
+## Autor
+
+Proyecto desarrollado como práctica de backend con Node.js y Express.

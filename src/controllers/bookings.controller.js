@@ -1,19 +1,13 @@
 
-// Importamos BookingManager para gestionar las reservas.
-import { BookingManager } from '../managers/BookingManager.js'
+import * as bookingsService from '../services/bookings.service.js'
 
-// Importamos ServiceManager para comprobar que los servicios existen.
-import { ServiceManager } from '../managers/ServiceManager.js'
 
-// Creamos una instancia de cada administrador.
-const bookingManager = new BookingManager()
-const serviceManager = new ServiceManager()
 
 // Creamos una reserva nueva.
 export const createBooking = (req, res) => {
   try {
-    // Enviamos los datos recibidos al manager.
-    const newBooking = bookingManager.createBooking(req.body)
+// Enviamos los datos recibidos al service.
+    const newBooking = bookingsService.createBooking(req.body)
 
     // Respondemos con código 201 porque la reserva se ha creado.
     return res.status(201).json(newBooking)
@@ -33,8 +27,8 @@ export const getBookingById = (req, res) => {
     return res.status(400).json({ error: 'ID de reserva inválido' })
   }
 
-  // Buscamos la reserva mediante el manager.
-  const booking = bookingManager.getBookingById(id)
+  // Buscamos la reserva mediante eñ service.
+ const booking = bookingsService.getBookingById(id)
 
   // Si no existe, respondemos con un error 404.
   if (!booking) {
@@ -61,15 +55,11 @@ export const addServiceToBooking = (req, res) => {
     })
   }
 
-  // Llamamos al manager para agregar el servicio.
-  // También le pasamos ServiceManager para comprobar que existe.
-  const result = bookingManager.addServiceToBooking(
-    bookingId,
-    serviceId,
-    serviceManager
-  )
+ // Llamamos al service para agregar el servicio.
+  // El service comprueba que el servicio exista antes de añadirlo.
+  const result = bookingsService.addServiceToBooking(bookingId, serviceId)
 
-  // Si el manager devuelve un error, respondemos con código 404.
+ // Si el service devuelve un error, respondemos con código 404.
   if (result.error) {
     return res.status(404).json({ error: result.error })
   }
