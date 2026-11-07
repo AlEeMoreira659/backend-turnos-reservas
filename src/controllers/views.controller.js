@@ -14,11 +14,13 @@ import * as bookingsService from '../services/bookings.service.js';
 */
 export const renderServices = async (req, res) => {
     try {
-        // Recuperamos los servicios desde nuestra arquitectura en capas.
-        const services = await servicesService.getServices();
+        // Recuperamos los servicios y los datos de paginación.
+        const result = await servicesService.getServices();
 
-        // Convertimos los documentos de Mongoose en objetos normales.
-        const plainServices = services.map(service => service.toObject());
+        // Obtenemos la lista de servicios.
+        const plainServices = result.services.map(
+            service => service.toObject()
+        );
 
         // Renderizamos la vista de servicios.
         return res.render('services', {
@@ -41,7 +43,9 @@ export const renderAvailability = async (req, res) => {
         const bookings = await bookingsService.getBookings();
 
         // Convertimos las reservas en objetos normales.
-        const plainBookings = bookings.map(booking => booking.toObject());
+        const plainBookings = bookings.map(
+            booking => booking.toObject()
+        );
 
         // Renderizamos la vista de reservas.
         return res.render('availability', {

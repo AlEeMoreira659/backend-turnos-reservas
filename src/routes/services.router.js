@@ -1,40 +1,37 @@
 
+import { Router } from 'express';
 
-// Importamos Router desde Express.
-// Nos permite crear y organizar las rutas de servicios.
-import { Router } from 'express'
-
-// Importamos las funciones del controlador de servicios.
-// Cada función se encarga de una operación diferente.
 import {
-  getServices,
-  getServiceById,
-  createService,
-  updateService,
-  deleteService
-} from '../controllers/services.controller.js'
+    getServices,
+    getServiceById,
+    createService,
+    updateService,
+    deleteService
+} from '../controllers/services.controller.js';
 
-// Creamos una instancia del router.
-const router = Router()
+import { validate } from '../validators/validate.middleware.js';
 
-// GET '/' obtiene todos los servicios.
-// También permite aplicar filtros mediante parámetros de consulta.
-router.get('/', getServices)
+import {
+    createServiceSchema,
+    updateServiceSchema
+} from '../validators/service.validator.js';
 
-// GET '/:sid' busca un servicio por su identificador.
-// :sid representa el ID del servicio.
-router.get('/:sid', getServiceById)
+const router = Router();
 
-// POST '/' permite crear un nuevo servicio.
-router.post('/', createService)
+// Consultar todos los servicios.
+router.get('/', getServices);
 
-// PUT '/:sid' permite modificar un servicio existente.
-// :sid indica qué servicio queremos modificar.
-router.put('/:sid', updateService)
+// Consultar un servicio por su ID.
+router.get('/:sid', getServiceById);
 
-// DELETE '/:sid' permite eliminar un servicio.
-// :sid indica qué servicio queremos eliminar.
-router.delete('/:sid', deleteService)
+// Crear un servicio: primero valida y después ejecuta el controlador.
+router.post('/', validate(createServiceSchema), createService);
 
-// Exportamos el router para utilizarlo en app.js.
-export default router
+// Actualizar un servicio: primero valida y después ejecuta el controlador.
+router.put('/:sid', validate(updateServiceSchema), updateService);
+
+// Eliminar un servicio.
+router.delete('/:sid', deleteService);
+
+export default router;
+

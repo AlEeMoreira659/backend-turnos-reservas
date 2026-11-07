@@ -1,3 +1,4 @@
+
 # Backend de Turnos y Reservas
 
 ## Descripción
@@ -6,7 +7,7 @@ API REST desarrollada con Node.js, Express y MongoDB para gestionar servicios re
 
 La aplicación utiliza Mongoose para comunicarse con MongoDB Atlas y una arquitectura en capas para separar las responsabilidades.
 
-Además, incorpora vistas dinámicas con Handlebars y comunicación en tiempo real mediante Socket.io.
+También incorpora validaciones con Zod, consultas avanzadas con filtros y paginación, relaciones entre documentos mediante populate, vistas dinámicas con Handlebars y comunicación en tiempo real mediante Socket.io.
 
 ## Tecnologías utilizadas
 
@@ -15,6 +16,7 @@ Además, incorpora vistas dinámicas con Handlebars y comunicación en tiempo re
 - JavaScript (ES Modules)
 - MongoDB Atlas
 - Mongoose
+- Zod
 - dotenv
 - Express Handlebars
 - Socket.io
@@ -103,7 +105,7 @@ Archivos:
 
 ### 3. Services
 
-Contiene la lógica de negocio y las validaciones.
+Contiene la lógica de negocio y las operaciones de la aplicación.
 
 Archivos:
 
@@ -138,29 +140,87 @@ Archivos:
 - `booking.model.js`
 - `message.model.js`
 
+### 7. Validators
+
+Contiene los esquemas de validación de datos mediante Zod y el middleware que los aplica antes de ejecutar los controladores.
+
+Archivos:
+
+- `service.validator.js`
+- `booking.validator.js`
+- `validate.middleware.js`
+
 ## Endpoints de servicios
 
 Prefijo: `/api/services`
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| GET | `/api/services` | Obtener todos los servicios |
+| GET | `/api/services` | Obtener servicios con filtros y paginación |
 | GET | `/api/services/:sid` | Obtener un servicio por su ID |
 | POST | `/api/services` | Crear un servicio |
 | PUT | `/api/services/:sid` | Actualizar un servicio |
 | DELETE | `/api/services/:sid` | Eliminar un servicio |
 
-Se pueden filtrar los servicios mediante:
+### Consultas avanzadas
 
-- `category`: filtra por categoría.
-- `available`: filtra por disponibilidad.
+El endpoint `GET /api/services` permite utilizar los siguientes parámetros:
 
-Ejemplos:
+| Parámetro | Descripción | Ejemplo |
+|---|---|---|
+| `category` | Filtra por categoría | `category=Pilates` |
+| `available` | Filtra por disponibilidad | `available=true` |
+| `page` | Número de página | `page=1` |
+| `limit` | Resultados por página | `limit=2` |
+| `sortBy` | Campo por el que ordenar | `sortBy=price` |
+| `order` | Orden ascendente o descendente | `order=asc` |
+
+Campos permitidos para ordenar:
+
+- `name`
+- `price`
+- `duration`
+- `category`
+
+El parámetro `order` acepta `asc` o `desc`.
+
+Ejemplos de consultas:
 
 ```http
 GET /api/services?category=Pilates
 GET /api/services?available=false
+GET /api/services?page=1&limit=2
+GET /api/services?sortBy=price&order=asc
+GET /api/services?category=Pilates&available=true&page=1&limit=5&sortBy=price&order=desc
 ```
+
+### Respuesta de paginación
+
+La respuesta incluye la lista de servicios y los metadatos de paginación:
+
+```json
+{
+  "services": [
+    {
+      "_id": "ID_DEL_SERVICIO",
+      "name": "Pilates",
+      "description": "Clase de Pilates",
+      "duration": 60,
+      "price": 22,
+      "category": "Pilates",
+      "available": true
+    }
+  ],
+  "total": 6,
+  "page": 1,
+  "limit": 2,
+  "totalPages": 3,
+  "hasPrevPage": false,
+  "hasNextPage": true
+}
+```
+
+Los filtros, el ordenamiento y la paginación se ejecutan directamente en MongoDB mediante Mongoose.
 
 ## Endpoints de reservas
 
@@ -172,9 +232,129 @@ Prefijo: `/api/bookings`
 | GET | `/api/bookings/:bid` | Consultar una reserva |
 | POST | `/api/bookings/:bid/services/:sid` | Añadir un servicio a una reserva |
 
-Las reservas se relacionan con los servicios mediante identificadores ObjectId de MongoDB.
+### Relaciones entre reservas y servicios
+
+Las reservas almacenan referencias a los servicios mediante `ObjectId` de MongoDB.
+
+Cada servicio asociado a una reserva contiene:
+
+- `service`: referencia al documento del servicio.
+- `quantity`: cantidad reservada.
+
+El modelo utiliza una referencia a `Service`:
+
+```javascript
+service: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Service',
+    required: true
+}
+```
+
+### Populate
+
+Para consultar una reserva con los datos completos de sus servicios se utiliza Mongoose `populate`.
+
+En el DAO:
+
+```javascript
+export const getById = async (id) => {
+    return await Booking.findById(id)
+        .populate('services.service');
+};
+```
+
+De esta forma, al consultar:
+
+```http
+GET /api/bookings/:bid
+```
+
+se obtiene la información de la reserva junto con los servicios relacionados, incluyendo sus nombres, descripciones, duración, precio y categoría.
+
+Ejemplo de la estructura de respuesta:
+
+```json
+{
+  "_id": "ID_DE_LA_RESERVA",
+  "clientName": "Laura",
+  "clientEmail": "laura@email.com",
+  "date": "2026-11-10",
+  "time": "10:00",
+  "status": "confirmed",
+  "services": [
+    {
+      "service": {
+        "_id": "ID_DEL_SERVICIO",
+        "name": "Pilates",
+        "description": "Clase de Pilates",
+        "duration": 60,
+        "price": 22,
+        "category": "Pilates",
+        "available": true
+      },
+      "quantity": 3
+    }
+  ]
+}
+```
 
 Si se añade un servicio que ya existe en una reserva, aumenta su cantidad (`quantity`) en lugar de crear una entrada duplicada.
+
+## Validaciones con Zod
+
+El proyecto utiliza Zod para validar los datos recibidos por la API antes de que lleguen a los controladores y se guarden en MongoDB.
+
+Las validaciones se encuentran en `src/validators/`.
+
+### Validación de servicios
+
+Al crear o actualizar servicios se comprueban:
+
+- Nombre obligatorio.
+- Descripción obligatoria.
+- Duración mayor que cero.
+- Precio igual o superior a cero.
+- Categoría obligatoria.
+- Disponibilidad de tipo booleano, cuando se proporciona.
+
+### Validación de reservas
+
+Al crear una reserva se comprueban:
+
+- Nombre de la clienta obligatorio.
+- Correo electrónico con formato válido.
+- Fecha obligatoria.
+- Hora obligatoria.
+- Estado obligatorio.
+
+### Validación al añadir servicios a una reserva
+
+Se comprueba que la cantidad sea un número entero positivo.
+
+Si no se indica cantidad, se utiliza el valor predeterminado `1`.
+
+### Middleware de validación
+
+El middleware `validate.middleware.js` utiliza `safeParse()` para comprobar los datos recibidos.
+
+Si los datos no son válidos, la API devuelve un código HTTP `400` con el campo y el mensaje del error.
+
+Ejemplo de respuesta:
+
+```json
+{
+  "error": "Error de validación",
+  "details": [
+    {
+      "field": "clientEmail",
+      "message": "El correo electrónico no es válido"
+    }
+  ]
+}
+```
+
+Las validaciones se aplican en las rutas mediante el middleware correspondiente, antes de ejecutar los controladores.
 
 ## Vistas con Handlebars
 
@@ -239,4 +419,4 @@ El archivo `.gitignore` evita subir:
 
 ## Autor
 
-Proyecto desarrollado como práctica de backend con Node.js, Express, MongoDB, Mongoose, Handlebars y Socket.io.
+Proyecto desarrollado como práctica de backend con Node.js, Express, MongoDB, Mongoose, Zod, Handlebars y Socket.io.

@@ -1,85 +1,55 @@
 
-// Importamos las funciones de nuestra intermediaria (Repository).
 import * as bookingsRepository from '../repositories/bookings.repository.js';
-
-// Importamos las funciones de nuestra encargada de servicios.
 import * as servicesService from './services.service.js';
 
-
-// Obtenemos todas las reservas del centro.
+// Obtener todas las reservas.
 export const getBookings = async () => {
     return await bookingsRepository.getAll();
 };
 
-// Creamos una reserva nueva.
+// Crear una reserva.
 export const createBooking = async (bookingData) => {
-
-  // Definimos los campos obligatorios de una reserva.
-  const requiredFields = [
-    'clientName',
-    'clientEmail',
-    'date',
-    'time',
-    'status'
-  ];
-
-  // Comprobamos que todos los campos obligatorios tengan información.
-  for (const field of requiredFields) {
-    if (
-      bookingData[field] === undefined ||
-      bookingData[field] === null ||
-      bookingData[field] === ''
-    ) {
-      throw new Error(`Falta el campo obligatorio: ${field}`);
-    }
-  }
-
-  // Esperamos a que la intermediaria guarde la reserva.
-  return await bookingsRepository.create(bookingData);
+    return await bookingsRepository.create(bookingData);
 };
 
-// Buscamos una reserva por su identificador.
+// Buscar una reserva por su identificador.
 export const getBookingById = async (id) => {
-  return await bookingsRepository.getById(id);
+    return await bookingsRepository.getById(id);
 };
 
-// Añadimos un servicio a una reserva.
-export const addServiceToBooking = async (bookingId, serviceId) => {
+// Agregar un servicio a una reserva.
+export const addServiceToBooking = async (bookingId, serviceId, quantity = 1) => {
 
-  // Buscamos la reserva y esperamos la respuesta de MongoDB.
-  const booking = await bookingsRepository.getById(bookingId);
+    // Buscar la reserva.
+    const booking = await bookingsRepository.getById(bookingId);
 
-  // Si la reserva no existe, devolvemos un error.
-  if (!booking) {
-    return { error: 'Reserva no encontrada' };
-  }
+    if (!booking) {
+        return { error: 'Reserva no encontrada' };
+    }
 
-  // Buscamos el servicio que queremos añadir.
-  const service = await servicesService.getServiceById(serviceId);
+    // Comprobar que el servicio existe.
+    const service = await servicesService.getServiceById(serviceId);
 
-  // Si el servicio no existe, devolvemos un error.
-  if (!service) {
-    return { error: 'Servicio no encontrado' };
-  }
+    if (!service) {
+        return { error: 'Servicio no encontrado' };
+    }
 
-  // Comprobamos si el servicio ya está incluido en la reserva.
-  // Convertimos los ObjectId a texto para poder compararlos.
-  const existingItem = booking.services.find(
-    item => item.service._id.toString() === serviceId
-  );
+    // Comprobar si el servicio ya está en la reserva.
+    const existingItem = booking.services.find(
+        item => item.service._id.toString() === serviceId
+    );
 
-  // Si el servicio ya existe, aumentamos su cantidad en uno.
-  if (existingItem) {
-    existingItem.quantity += 1;
+    if (existingItem) {
+        // Si ya existe, sumar la cantidad recibida.
+        existingItem.quantity += quantity;
+    } else {
+        // Si no existe, guardar su ObjectId y la cantidad.
+        booking.services.push({
+            service: serviceId,
+            quantity: quantity
+        });
+    }
 
-  } else {
-    // Si todavía no existe, lo añadimos con cantidad inicial 1.
-    booking.services.push({
-      service: serviceId,
-      quantity: 1
-    });
-  }
-
-  // Guardamos los cambios y esperamos la reserva actualizada.
-  return await bookingsRepository.update(bookingId, booking);
+    // Guardar la reserva actualizada.
+    return await bookingsRepository.update(bookingId, booking);
 };

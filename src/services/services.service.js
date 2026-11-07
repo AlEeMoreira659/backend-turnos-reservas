@@ -1,51 +1,80 @@
 
-// Importamos las funciones de nuestra intermediaria (Repository).
 import * as servicesRepository from '../repositories/services.repository.js';
 
-console.log('REPOSITORY getAll:', typeof servicesRepository.getAll);
-console.log('REPOSITORY exports:', Object.keys(servicesRepository));
-
-// Obtenemos todos los servicios y aplicamos los filtros.
+// Obtener servicios con filtros, paginación y ordenamiento.
 export const getServices = async (filters = {}) => {
-  
-  // Esperamos a que MongoDB nos entregue los servicios.
-  let services = await servicesRepository.getAll();
+    const {
+        category,
+        available,
+        page = '1',
+        limit = '10',
+        sortBy = 'name',
+        order = 'asc'
+    } = filters;
 
-  const { category, available } = filters;
+    const currentPage = Number(page);
+    const pageLimit = Number(limit);
 
-  // Filtramos por categoría si recibimos una.
-  if (category) {
-    services = services.filter(
-      service => service.category === category
-    );
-  }
+    // Comprobar que la página y el límite sean números válidos.
+    if (
+        !Number.isInteger(currentPage) ||
+        currentPage < 1 ||
+        !Number.isInteger(pageLimit) ||
+        pageLimit < 1
+    ) {
+        throw new Error('La página y el límite deben ser números enteros positivos');
+    }
 
-  // Filtramos por disponibilidad si recibimos el filtro.
-  if (available !== undefined) {
-    services = services.filter(
-      service => service.available === (available === 'true')
-    );
-  }
+    // Comprobar los campos permitidos para ordenar.
+    const allowedSortFields = [
+        'name',
+        'price',
+        'duration',
+        'category'
+    ];
 
-  return services;
+    if (!allowedSortFields.includes(sortBy)) {
+        throw new Error('El campo de ordenación no es válido');
+    }
+
+    if (!['asc', 'desc'].includes(order)) {
+        throw new Error('El orden debe ser asc o desc');
+    }
+
+    if (
+        available !== undefined &&
+        !['true', 'false'].includes(available)
+    ) {
+        throw new Error('El filtro available debe ser true o false');
+    }
+
+    // Enviar los filtros al repositorio y al DAO.
+    return await servicesRepository.getAll({
+        category,
+        available,
+        page: currentPage,
+        limit: pageLimit,
+        sortBy,
+        order
+    });
 };
 
-// Buscamos un servicio por su identificador.
+// Buscar un servicio por su identificador.
 export const getServiceById = async (id) => {
-  return await servicesRepository.getById(id);
+    return await servicesRepository.getById(id);
 };
 
-// Creamos un servicio nuevo.
+// Crear un servicio.
 export const createService = async (serviceData) => {
-  return await servicesRepository.create(serviceData);
+    return await servicesRepository.create(serviceData);
 };
 
-// Actualizamos un servicio existente.
+// Actualizar un servicio.
 export const updateService = async (id, updatedData) => {
-  return await servicesRepository.update(id, updatedData);
+    return await servicesRepository.update(id, updatedData);
 };
 
-// Eliminamos un servicio.
+// Eliminar un servicio.
 export const deleteService = async (id) => {
-  return await servicesRepository.deleteService(id);
+    return await servicesRepository.deleteService(id);
 };
