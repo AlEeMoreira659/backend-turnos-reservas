@@ -1,0 +1,37 @@
+
+<section class="container">
+    <h2>Nuestros servicios</h2>
+
+    <p>Consulta las clases disponibles en nuestro centro.</p>
+
+    <div id="services-list" class="services-grid">
+
+        {{#each services}}
+            <article class="service-card">
+
+                <h3>{{name}}</h3>
+
+                <p>{{description}}</p>
+
+                <p><strong>Duración:</strong> {{duration}} minutos</p>
+
+                <p><strong>Precio:</strong> {{price}} €</p>
+
+                <p><strong>Categoría:</strong> {{category}}</p>
+
+                <p>
+                    <strong>Disponibilidad:</strong>
+                    {{#if available}}
+                        <span class="available">Disponible</span>
+                    {{else}}
+                        <span class="unavailable">No disponible</span>
+                    {{/if}}
+                </p>
+
+            </article>
+        {{else}}
+            <p>No hay servicios registrados.</p>
+        {{/each}}
+
+    </div>
+</section>

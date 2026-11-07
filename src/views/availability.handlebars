@@ -1,0 +1,38 @@
+
+<section class="container">
+    <h2>Reservas del centro</h2>
+
+    <p>Consulta las reservas registradas en nuestro sistema.</p>
+
+    <div id="bookings-list" class="bookings-grid">
+
+        {{#each bookings}}
+            <article class="booking-card">
+
+                <h3>Reserva de {{clientName}}</h3>
+
+                <p><strong>Correo:</strong> {{clientEmail}}</p>
+
+                <p><strong>Fecha:</strong> {{date}}</p>
+
+                <p><strong>Hora:</strong> {{time}}</p>
+
+                <p><strong>Estado:</strong> {{status}}</p>
+
+                <h4>Servicios reservados</h4>
+
+                {{#each services}}
+                    <p>
+                        {{service.name}} — Cantidad: {{quantity}}
+                    </p>
+                {{else}}
+                    <p>Esta reserva todavía no tiene servicios.</p>
+                {{/each}}
+
+            </article>
+        {{else}}
+            <p>No hay reservas registradas.</p>
+        {{/each}}
+
+    </div>
+</section>

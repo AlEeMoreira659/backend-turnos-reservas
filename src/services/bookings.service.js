@@ -5,6 +5,12 @@ import * as bookingsRepository from '../repositories/bookings.repository.js';
 // Importamos las funciones de nuestra encargada de servicios.
 import * as servicesService from './services.service.js';
 
+
+// Obtenemos todas las reservas del centro.
+export const getBookings = async () => {
+    return await bookingsRepository.getAll();
+};
+
 // Creamos una reserva nueva.
 export const createBooking = async (bookingData) => {
 

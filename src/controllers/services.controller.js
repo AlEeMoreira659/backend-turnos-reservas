@@ -7,7 +7,6 @@ export const getServices = async (req, res) => {
   try {
     const { category, available } = req.query;
 
-    // Esperamos a que la encargada nos entregue los servicios.
     const services = await servicesService.getServices({
       category,
       available
@@ -23,7 +22,6 @@ export const getServices = async (req, res) => {
 // Buscamos un servicio por su identificador.
 export const getServiceById = async (req, res) => {
   try {
-    // El identificador ahora es un ObjectId, no un número.
     const id = req.params.sid;
 
     const service = await servicesService.getServiceById(id);
@@ -39,11 +37,19 @@ export const getServiceById = async (req, res) => {
   }
 };
 
-// Creamos un servicio nuevo.
+// Creamos un servicio nuevo y avisamos mediante Socket.io.
 export const createService = async (req, res) => {
   try {
+    // Guardamos el servicio en MongoDB mediante las capas existentes.
     const newService = await servicesService.createService(req.body);
 
+    // Recuperamos Socket.io desde la aplicación Express.
+    const io = req.app.get('io');
+
+    // Avisamos a los navegadores conectados.
+    io.emit('serviceCreated', newService);
+
+    // Devolvemos el servicio creado a quien realizó la petición.
     return res.status(201).json(newService);
 
   } catch (error) {

@@ -16,6 +16,13 @@ export const create = async (bookingData) => {
     return newBooking;
 };
 
+
+// Obtenemos todas las reservas guardadas en MongoDB.
+export const getAll = async () => {
+    return await Booking.find().populate('services.service');
+};
+
+
 // Buscamos una reserva por su identificador.
 export const getById = async (id) => {
 

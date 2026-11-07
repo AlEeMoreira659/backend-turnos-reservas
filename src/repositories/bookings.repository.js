@@ -2,6 +2,9 @@
 // Importamos las funciones de nuestra archivista (DAO).
 import * as bookingsDao from '../dao/bookings.dao.js';
 
+// Obtenemos todas las reservas.
+export const getAll = async () => await bookingsDao.getAll();
+
 // Creamos una reserva nueva.
 export const create = async (bookingData) => {
     return await bookingsDao.create(bookingData);
