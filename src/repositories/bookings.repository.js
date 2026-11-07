@@ -1,17 +1,18 @@
-//bookings.repository.js se comunicará con bookings.dao.js, y este último será quien lea y escriba en bookings.json.
-import * as bookingsDao from '../dao/bookings.dao.js'
 
-// creamos la reserva 
-export const create =(bookingsData)=>{
-    return bookingsDao.create(bookingsData)
-}
+// Importamos las funciones de nuestra archivista (DAO).
+import * as bookingsDao from '../dao/bookings.dao.js';
 
-// buscar una nueva reserva 
-export const getById =(id)=>{
-    return bookingsDao.getById(id)
-}
+// Creamos una reserva nueva.
+export const create = async (bookingData) => {
+    return await bookingsDao.create(bookingData);
+};
+
+// Buscamos una reserva por su identificador.
+export const getById = async (id) => {
+    return await bookingsDao.getById(id);
+};
 
 // Actualizamos una reserva existente.
-export const update = (id, updatedData) => {
-  return bookingsDao.update(id, updatedData)
-}
+export const update = async (id, updatedData) => {
+    return await bookingsDao.update(id, updatedData);
+};

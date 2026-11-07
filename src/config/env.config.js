@@ -1,8 +1,8 @@
-
+// Importamos dotenv para leer las variables guardadas en .env.
 import 'dotenv/config'
 
 // Variables de entorno obligatorias.
-const requiredEnvVars = ['PORT', 'NODE_ENV']
+const requiredEnvVars = ['PORT', 'NODE_ENV', 'MONGO_URI']
 
 // Comprobamos que todas existan.
 for (const variable of requiredEnvVars) {
@@ -21,5 +21,6 @@ if (!Number.isInteger(port) || port <= 0) {
 // Exportamos la configuración.
 export const env = {
   PORT: port,
-  NODE_ENV: process.env.NODE_ENV
+  NODE_ENV: process.env.NODE_ENV,
+  MONGO_URI: process.env.MONGO_URI
 }

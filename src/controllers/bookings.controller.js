@@ -1,69 +1,84 @@
 
-import * as bookingsService from '../services/bookings.service.js'
+// Importamos Mongoose para comprobar los identificadores.
+import mongoose from 'mongoose';
 
-
+// Importamos las funciones de nuestra encargada (Service).
+import * as bookingsService from '../services/bookings.service.js';
 
 // Creamos una reserva nueva.
-export const createBooking = (req, res) => {
+export const createBooking = async (req, res) => {
   try {
-// Enviamos los datos recibidos al service.
-    const newBooking = bookingsService.createBooking(req.body)
+    // Enviamos los datos recibidos a nuestra encargada.
+    const newBooking = await bookingsService.createBooking(req.body);
 
     // Respondemos con código 201 porque la reserva se ha creado.
-    return res.status(201).json(newBooking)
+    return res.status(201).json(newBooking);
+
   } catch (error) {
     // Si ocurre un error, respondemos con código 400.
-    return res.status(400).json({ error: error.message })
+    return res.status(400).json({ error: error.message });
   }
-}
+};
 
 // Buscamos una reserva por su identificador.
-export const getBookingById = (req, res) => {
-  // Convertimos el ID recibido en un número.
-  const id = Number(req.params.bid)
+export const getBookingById = async (req, res) => {
+  // Obtenemos el identificador de la URL.
+  const id = req.params.bid;
 
-  // Comprobamos que el ID sea un número entero positivo.
-  if (!Number.isInteger(id) || id <= 0) {
-    return res.status(400).json({ error: 'ID de reserva inválido' })
+  // Comprobamos que tenga un formato válido de MongoDB.
+  if (!mongoose.isValidObjectId(id)) {
+    return res.status(400).json({ error: 'ID de reserva inválido' });
   }
 
-  // Buscamos la reserva mediante eñ service.
- const booking = bookingsService.getBookingById(id)
+  try {
+    // Buscamos la reserva y esperamos la respuesta.
+    const booking = await bookingsService.getBookingById(id);
 
-  // Si no existe, respondemos con un error 404.
-  if (!booking) {
-    return res.status(404).json({ error: 'Reserva no encontrada' })
+    // Si no existe, respondemos con un error 404.
+    if (!booking) {
+      return res.status(404).json({ error: 'Reserva no encontrada' });
+    }
+
+    // Si existe, devolvemos la reserva.
+    return res.status(200).json(booking);
+
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
-
-  // Si existe, devolvemos la reserva.
-  return res.status(200).json(booking)
-}
+};
 
 // Agregamos un servicio a una reserva.
-export const addServiceToBooking = (req, res) => {
+export const addServiceToBooking = async (req, res) => {
   // Obtenemos los dos identificadores de la URL.
-  const bookingId = Number(req.params.bid)
-  const serviceId = Number(req.params.sid)
+  const bookingId = req.params.bid;
+  const serviceId = req.params.sid;
 
   // Comprobamos que ambos identificadores sean válidos.
   if (
-    !Number.isInteger(bookingId) || bookingId <= 0 ||
-    !Number.isInteger(serviceId) || serviceId <= 0
+    !mongoose.isValidObjectId(bookingId) ||
+    !mongoose.isValidObjectId(serviceId)
   ) {
     return res.status(400).json({
       error: 'ID de reserva o servicio inválido'
-    })
+    });
   }
 
- // Llamamos al service para agregar el servicio.
-  // El service comprueba que el servicio exista antes de añadirlo.
-  const result = bookingsService.addServiceToBooking(bookingId, serviceId)
+  try {
+    // Llamamos a nuestra encargada para agregar el servicio.
+    const result = await bookingsService.addServiceToBooking(
+      bookingId,
+      serviceId
+    );
 
- // Si el service devuelve un error, respondemos con código 404.
-  if (result.error) {
-    return res.status(404).json({ error: result.error })
+    // Si la encargada devuelve un error, respondemos con código 404.
+    if (result.error) {
+      return res.status(404).json({ error: result.error });
+    }
+
+    // Si todo ha salido bien, devolvemos la reserva actualizada.
+    return res.status(200).json(result);
+
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
-
-  // Si todo ha salido bien, devolvemos la reserva actualizada.
-  return res.status(200).json(result)
-}
+};

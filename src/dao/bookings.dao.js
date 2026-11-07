@@ -1,71 +1,40 @@
-import fs from 'node:fs'//trabajar con archivos: leerlos, escribirlos, modificarlos, etc.
-import path from 'node:path'//construir rutas de archivos y carpetas.
-import { fileURLToPath } from 'node:url'//convertir una dirección de archivo en una ruta que Node.js
 
-// Importamos las herramientas necesarias de Node.js.
-
-
-// Obtenemos la ubicación actual de este archivo.
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-// Construimos la ruta del archivo bookings.json.
-const filePath = path.join(__dirname, '../data/bookings.json')
-
-// Leemos las reservas guardadas.
-const readData = () => {
-  const data = fs.readFileSync(filePath, 'utf-8')
-  return JSON.parse(data)
-}
-
-// Guardamos las reservas en el archivo JSON.
-const writeData = (bookings) => {
-  fs.writeFileSync(
-    filePath,
-    JSON.stringify(bookings, null, 2),
-    'utf-8'
-  )
-}
+// Importamos el modelo Booking.
+// Es nuestra ficha de reservas en MongoDB.
+import Booking from '../models/booking.model.js';
 
 // Creamos una reserva nueva.
-export const create = (bookingData) => {
-  const bookings = readData()
+export const create = async (bookingData) => {
 
-  const newId = bookings.length > 0
-    ? Math.max(...bookings.map(booking => booking.id)) + 1
-    : 1
+    // Guardamos la reserva en MongoDB.
+    // MongoDB genera automáticamente su identificador.
+    const newBooking = await Booking.create({
+        ...bookingData,
+        services: []
+    });
 
-  const newBooking = {
-    ...bookingData,
-    id: newId,
-    services: []
-  }
+    return newBooking;
+};
 
-  bookings.push(newBooking)
-  writeData(bookings)
+// Buscamos una reserva por su identificador.
+export const getById = async (id) => {
 
-  return newBooking
-}
-export const getById = (id) => {
-  const bookings = readData()
-  return bookings.find(booking => booking.id === id)
-}
-export const update = (id, updatedData) => {
-  const bookings = readData()
+    // Buscamos la reserva utilizando su ObjectId.
+    // populate permite obtener también los datos de los servicios relacionados.
+    return await Booking.findById(id).populate('services.service');
+};
 
-  const index = bookings.findIndex(booking => booking.id === id)
+// Actualizamos una reserva existente.
+export const update = async (id, updatedData) => {
 
-  if (index === -1) {
-    return null
-  }
-
-  bookings[index] = {
-    ...bookings[index],
-    ...updatedData,
-    id
-  }
-
-  writeData(bookings)
-
-  return bookings[index]
-}
+    // Buscamos la reserva, actualizamos sus datos
+    // y devolvemos la reserva ya modificada.
+    return await Booking.findByIdAndUpdate(
+        id,
+        updatedData,
+        {
+            new: true,
+            runValidators: true
+        }
+    ).populate('services.service');
+};
